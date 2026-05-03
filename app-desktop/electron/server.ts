@@ -40,9 +40,13 @@ function corsOrigin(origin: string | undefined, callback: (err: Error | null, al
   callback(null, false)
 }
 
+function looksLikePdf(buffer: Buffer) {
+  return buffer.subarray(0, 1024).toString('utf8').includes('%PDF-')
+}
+
 function requirePdfFile(file: Express.Multer.File | undefined) {
   if (!file) throw new ApiValidationError('No file provided')
-  if (file.mimetype && file.mimetype !== 'application/pdf') {
+  if (!looksLikePdf(file.buffer)) {
     throw new ApiValidationError('File must be a PDF')
   }
   return file

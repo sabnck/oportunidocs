@@ -12,6 +12,13 @@ npm start
 # http://127.0.0.1:4000
 ```
 
+## Check
+
+```bash
+npm run check
+npm run test:invalid-inputs
+```
+
 Change host, port or browser CORS allowlist:
 
 ```bash

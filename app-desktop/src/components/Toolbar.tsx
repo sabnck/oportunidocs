@@ -8,17 +8,7 @@ import {
 } from 'lucide-react'
 import { usePDFStore, ToolType } from '../store/pdfStore'
 import { flattenAnnotations } from '../utils/pdfOperations'
-import {
-  chooseExportFormat,
-  createEditableDocumentFromBytes,
-  defaultExportName,
-  exportPdfPagesAsImages,
-  inferExportFormatFromPath,
-  isSupportedInput,
-  SUPPORTED_OPEN_ACCEPT,
-  withExportExtension,
-  type ExportFormat
-} from '../utils/documentIO'
+import { useDocumentActions } from '../hooks/useDocumentActions'
 import { ocrPageToTextAnnotations } from '../utils/ocr'
 import { enhancePdfScan } from '../utils/scanEnhance'
 import { SignatureModal } from './SignatureModal'
@@ -55,14 +45,14 @@ export function Toolbar() {
     fontSize, setFontSize,
     highlightColor, setHighlightColor,
     textColor, setTextColor,
-    undo, redo, addAnnotations, updateFileData, markSaved
+    undo, redo, addAnnotations, updateFileData
   } = usePDFStore()
 
   const activeFile = files.find(f => f.id === activeFileId)
+  const { openFile: handleOpen, save: handleSave, saveAs: handleSaveAs, saving } = useDocumentActions()
   const [showSignatureModal, setShowSignatureModal] = useState(false)
   const [showMergeModal, setShowMergeModal] = useState(false)
   const [showPropertiesModal, setShowPropertiesModal] = useState(false)
-  const [saving, setSaving] = useState(false)
   const [ocrRunning, setOcrRunning] = useState(false)
   const [ocrStatus, setOcrStatus] = useState('')
   const [enhancingScan, setEnhancingScan] = useState(false)
@@ -112,154 +102,6 @@ export function Toolbar() {
     input.click()
   }
 
-  const handleOpen = async () => {
-    const { addFile: addFileAction, addRecentFile } = usePDFStore.getState()
-    const addOpenedFile = async (input: { name: string; data: Uint8Array; path?: string; mimeType?: string }) => {
-      const prepared = await createEditableDocumentFromBytes(input)
-      addFileAction({
-        id: crypto.randomUUID(),
-        name: input.name,
-        path: prepared.sourceKind === 'pdf' ? input.path : undefined,
-        sourcePath: input.path,
-        sourceKind: prepared.sourceKind,
-        data: prepared.data,
-        pageCount: 0,
-        annotations: [],
-        modified: false
-      })
-      if (input.path) addRecentFile({ name: input.name, path: input.path })
-    }
-
-    if ((window as any).electronAPI) {
-      const result = await (window as any).electronAPI.openFile()
-      if (!result) return
-      for (const f of result) {
-        const data = Uint8Array.from(atob(f.data), (c: string) => c.charCodeAt(0))
-        await addOpenedFile({ name: f.name, path: f.path, data, mimeType: f.mimeType })
-      }
-    } else {
-      const input = document.createElement('input')
-      input.type = 'file'; input.accept = SUPPORTED_OPEN_ACCEPT; input.multiple = true
-      input.onchange = async () => {
-        for (const f of Array.from(input.files ?? [])) {
-          if (!isSupportedInput(f.name, f.type)) continue
-          const data = new Uint8Array(await f.arrayBuffer())
-          await addOpenedFile({ name: f.name, data, mimeType: f.type })
-        }
-      }
-      input.click()
-    }
-  }
-
-  const writeExportedFile = async ({
-    selectedPath,
-    pdfBytes,
-    format,
-    fileId
-  }: {
-    selectedPath: string
-    pdfBytes: Uint8Array
-    format: ExportFormat
-    fileId: string
-  }) => {
-    const api = (window as any).electronAPI
-    if (format === 'pdf') {
-      const path = withExportExtension(selectedPath, 'pdf')
-      await api.writeFile({ path, data: Array.from(pdfBytes) })
-      updateFileData(fileId, pdfBytes)
-      markSaved(fileId)
-      return
-    }
-
-    const images = await exportPdfPagesAsImages(pdfBytes, format, selectedPath)
-    const target = withExportExtension(selectedPath, format)
-    const ext = format === 'png' ? 'png' : 'jpg'
-    const withoutExt = target.replace(/\.[^.\\/]+$/, '')
-    for (const image of images) {
-      const path = images.length === 1
-        ? target
-        : `${withoutExt}-page-${String(image.pageIndex + 1).padStart(2, '0')}.${ext}`
-      await api.writeFile({ path, data: Array.from(image.bytes) })
-    }
-  }
-
-  const downloadBlob = (bytes: Uint8Array, name: string, mimeType: string) => {
-    const arrayBuffer = new ArrayBuffer(bytes.byteLength)
-    new Uint8Array(arrayBuffer).set(bytes)
-    const blob = new Blob([arrayBuffer], { type: mimeType })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url; a.download = name
-    document.body.appendChild(a)
-    a.click(); document.body.removeChild(a)
-    setTimeout(() => URL.revokeObjectURL(url), 1000)
-  }
-
-  const downloadExport = async (name: string, pdfBytes: Uint8Array, format: ExportFormat) => {
-    if (format === 'pdf') {
-      downloadBlob(pdfBytes, defaultExportName(name, 'pdf'), 'application/pdf')
-      return
-    }
-    const images = await exportPdfPagesAsImages(pdfBytes, format, name)
-    for (const image of images) downloadBlob(image.bytes, image.name, image.mimeType)
-  }
-
-  const handleSave = async () => {
-    if (!activeFile || saving) return
-    setSaving(true)
-    try {
-      flushOpenTextEdit()
-      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
-      const latestState = usePDFStore.getState()
-      const latestFile = latestState.files.find(f => f.id === activeFile.id)
-      if (!latestFile) return
-      const pdfBytes = await flattenAnnotations(latestFile.data, latestFile.annotations, latestState.zoom)
-
-      if ((window as any).electronAPI && latestFile.path) {
-        await (window as any).electronAPI.writeFile({ path: latestFile.path, data: Array.from(pdfBytes) })
-        updateFileData(latestFile.id, pdfBytes)
-        markSaved(latestFile.id)
-      } else {
-        await handleSaveAs(pdfBytes)
-      }
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleSaveAs = async (existingPdfBytes?: Uint8Array) => {
-    if (!activeFile || saving) return
-    setSaving(true)
-    try {
-      flushOpenTextEdit()
-      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
-      const latestState = usePDFStore.getState()
-      const latestFile = latestState.files.find(f => f.id === activeFile.id)
-      if (!latestFile) return
-      const pdfBytes = existingPdfBytes ?? await flattenAnnotations(latestFile.data, latestFile.annotations, latestState.zoom)
-      const defaultFormat: ExportFormat = latestFile.sourceKind === 'image' ? 'png' : 'pdf'
-
-      if ((window as any).electronAPI) {
-        const savePath = await (window as any).electronAPI.saveFile({
-          defaultName: defaultExportName(latestFile.name, defaultFormat),
-          formats: ['pdf', 'png', 'jpeg']
-        })
-        if (!savePath) return
-        await writeExportedFile({
-          selectedPath: savePath,
-          pdfBytes,
-          format: inferExportFormatFromPath(savePath),
-          fileId: latestFile.id
-        })
-      } else {
-        const format = chooseExportFormat(defaultFormat)
-        if (!format) return
-        await downloadExport(latestFile.name, pdfBytes, format)
-      }
-    } finally {
-      setSaving(false)
-    }
-  }
   const handleOCR = async () => {
     if (!activeFile || !activeFileId || ocrRunning) return
     setOcrRunning(true)
@@ -358,7 +200,7 @@ export function Toolbar() {
           <TBtn
             icon={SaveAll}
             label="Save As (Ctrl+Shift+S)"
-            onClick={handleSaveAs}
+            onClick={() => handleSaveAs()}
             disabled={!activeFile || saving}
             active={false}
           />

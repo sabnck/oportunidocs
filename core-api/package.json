@@ -8,7 +8,9 @@
   "license": "SEE LICENSE IN LICENSE",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch src/server.js"
+    "dev": "node --watch src/server.js",
+    "check": "node --check src/server.js",
+    "test:invalid-inputs": "node scripts/smoke-invalid-inputs.mjs"
   },
   "dependencies": {
     "express": "^4.18.3",

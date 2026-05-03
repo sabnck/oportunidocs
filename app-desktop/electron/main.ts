@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, Menu, protocol } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, shell, Menu } from 'electron'
 import { basename, dirname, extname, join, resolve } from 'path'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { startLocalServer, stopLocalServer } from './server'
@@ -318,11 +318,6 @@ app.on('second-instance', () => {
 
 app.whenReady().then(() => {
   app.setAppUserModelId('com.studioelevatio.oportunidocs')
-
-  protocol.registerFileProtocol('ultra-pdf', (request, callback) => {
-    const url = request.url.replace('ultra-pdf://', '')
-    callback({ path: join(__dirname, '../../', url) })
-  })
 
   startLocalServer()
   createWindow()

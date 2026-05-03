@@ -83,10 +83,21 @@ class ApiValidationError extends Error {
 
 function requirePdfFile(req) {
   if (!req.file) throw new ApiValidationError('No file provided')
-  if (req.file.mimetype && req.file.mimetype !== 'application/pdf') {
+  if (!looksLikePdf(req.file.buffer)) {
     throw new ApiValidationError('File must be a PDF')
   }
   return req.file
+}
+
+function requirePdfUpload(file) {
+  if (!file || !looksLikePdf(file.buffer)) {
+    throw new ApiValidationError('All files must be PDFs')
+  }
+  return file
+}
+
+function looksLikePdf(buffer) {
+  return buffer.subarray(0, 1024).toString('utf8').includes('%PDF-')
 }
 
 function parsePositiveInteger(value, field) {
@@ -191,9 +202,7 @@ app.post('/api/pdf/merge', upload.array('files', 20), async (req, res) => {
 
     const merged = await PDFDocument.create()
     for (const file of files) {
-      if (file.mimetype && file.mimetype !== 'application/pdf') {
-        throw new ApiValidationError('All files must be PDFs')
-      }
+      requirePdfUpload(file)
       const pdf = await PDFDocument.load(file.buffer)
       const pages = await merged.copyPages(pdf, pdf.getPageIndices())
       pages.forEach(p => merged.addPage(p))

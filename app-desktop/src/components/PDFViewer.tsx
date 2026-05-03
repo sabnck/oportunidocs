@@ -3,7 +3,7 @@ import * as PDFJS from 'pdfjs-dist'
 import { usePDFStore } from '../store/pdfStore'
 import { AnnotationCanvas } from './AnnotationCanvas'
 import { TextEditOverlay } from './TextEditOverlay'
-import { createEditableDocumentFromBytes, isSupportedInput, SUPPORTED_OPEN_ACCEPT } from '../utils/documentIO'
+import { useDocumentActions } from '../hooks/useDocumentActions'
 
 const WHEEL_ZOOM_SENSITIVITY = 0.0018
 const MAX_WHEEL_ZOOM_STEP = 0.08
@@ -331,78 +331,17 @@ export function PDFViewer() {
 }
 
 function EmptyState() {
-  const { addFile } = usePDFStore()
+  const { openDroppedFiles, openFile } = useDocumentActions()
 
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault()
-    const files = Array.from(e.dataTransfer.files).filter(f => isSupportedInput(f.name, f.type))
-    for (const file of files) {
-      const buffer = await file.arrayBuffer()
-      const prepared = await createEditableDocumentFromBytes({
-        name: file.name,
-        data: new Uint8Array(buffer),
-        mimeType: file.type
-      })
-      addFile({
-        id: crypto.randomUUID(),
-        name: file.name,
-        sourceKind: prepared.sourceKind,
-        data: prepared.data,
-        pageCount: 0,
-        annotations: [],
-        modified: false
-      })
-    }
-  }, [addFile])
+    await openDroppedFiles(Array.from(e.dataTransfer.files))
+  }, [openDroppedFiles])
 
   const handleDragOver = (e: React.DragEvent) => e.preventDefault()
 
   const handleClick = async () => {
-    if ((window as any).electronAPI) {
-      const files = await (window as any).electronAPI.openFile()
-      if (!files) return
-      for (const file of files) {
-        const data = Uint8Array.from(atob(file.data), (c: string) => c.charCodeAt(0))
-        const prepared = await createEditableDocumentFromBytes({ name: file.name, data, mimeType: file.mimeType })
-        addFile({
-          id: crypto.randomUUID(),
-          name: file.name,
-          path: prepared.sourceKind === 'pdf' ? file.path : undefined,
-          sourcePath: file.path,
-          sourceKind: prepared.sourceKind,
-          data: prepared.data,
-          pageCount: 0,
-          annotations: [],
-          modified: false
-        })
-      }
-    } else {
-      const input = document.createElement('input')
-      input.type = 'file'
-      input.accept = SUPPORTED_OPEN_ACCEPT
-      input.multiple = true
-      input.onchange = async () => {
-        for (const file of Array.from(input.files ?? [])) {
-          if (!isSupportedInput(file.name, file.type)) continue
-          const buffer = await file.arrayBuffer()
-          const prepared = await createEditableDocumentFromBytes({
-            name: file.name,
-            data: new Uint8Array(buffer),
-            mimeType: file.type
-          })
-          addFile({
-            id: crypto.randomUUID(),
-            name: file.name,
-            sourceKind: prepared.sourceKind,
-            data: prepared.data,
-            pageCount: 0,
-            annotations: [],
-            modified: false
-          })
-        }
-      }
-      input.click()
-    }
+    await openFile()
   }
 
   return (

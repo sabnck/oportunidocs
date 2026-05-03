@@ -35,4 +35,12 @@ jobs:
 
       - name: Check standalone API syntax
         working-directory: core-api
-        run: node --check src/server.js
+        run: npm run check
+
+      - name: Install standalone API dependencies
+        working-directory: core-api
+        run: npm ci
+
+      - name: Test standalone API invalid inputs
+        working-directory: core-api
+        run: npm run test:invalid-inputs
