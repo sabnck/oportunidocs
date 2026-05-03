@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OportuniDocs</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 300px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: #0f0f12;
+      color: #f0f0f5;
+      font-size: 13px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px;
+      border-bottom: 1px solid #2a2a38;
+    }
+
+    .logo {
+      width: 32px; height: 32px;
+      background: #6366f1;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: bold; font-size: 14px; color: white; flex-shrink: 0;
+    }
+
+    .header-text h1 { font-size: 13px; font-weight: 600; }
+    .header-text p { font-size: 11px; color: #5a5a72; margin-top: 1px; }
+
+    .status {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 16px;
+      border-bottom: 1px solid #1f1f2b;
+    }
+
+    .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot.running { background: #22c55e; }
+    .dot.stopped { background: #9090a8; }
+
+    .status-text { font-size: 11px; color: #9090a8; }
+
+    .actions { padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+
+    .btn {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px;
+      background: #17171c;
+      border: 1px solid #2a2a38;
+      border-radius: 8px;
+      color: #f0f0f5;
+      font-size: 12px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s;
+      width: 100%;
+    }
+
+    .btn:hover { background: #1e1e26; border-color: #3a3a50; }
+    .btn:active { transform: scale(0.98); }
+
+    .btn.primary {
+      background: #6366f1;
+      border-color: transparent;
+      color: white;
+      font-weight: 500;
+    }
+
+    .btn.primary:hover { background: #818cf8; }
+
+    .btn-icon {
+      font-size: 16px; flex-shrink: 0;
+    }
+
+    .btn-content { flex: 1; }
+    .btn-title { font-weight: 500; }
+    .btn-desc { font-size: 10px; color: #9090a8; margin-top: 1px; }
+    .btn.primary .btn-desc { color: rgba(255,255,255,0.7); }
+
+    .divider { height: 1px; background: #1f1f2b; margin: 4px 0; }
+
+    .footer {
+      padding: 10px 16px;
+      border-top: 1px solid #1f1f2b;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .footer-text { font-size: 10px; color: #3a3a50; }
+
+    a { color: #6366f1; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .not-running-msg {
+      padding: 12px 16px;
+      background: #1a1a22;
+      border: 1px solid #2a2a38;
+      border-radius: 8px;
+      margin: 0 12px;
+      font-size: 11px;
+      color: #9090a8;
+      line-height: 1.5;
+    }
+
+    .not-running-msg strong { color: #f0f0f5; display: block; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">U</div>
+  <div class="header-text">
+    <h1>OportuniDocs</h1>
+    <p>Local PDF editor</p>
+  </div>
+</div>
+
+<div class="status">
+  <div class="dot" id="statusDot"></div>
+  <span class="status-text" id="statusText">Checking...</span>
+</div>
+
+<div class="actions" id="actions">
+  <div class="not-running-msg">
+    <strong>App not running</strong>
+    Open OportuniDocs on your computer to use it from this extension.
+  </div>
+</div>
+
+<div class="footer">
+  <span class="footer-text">OportuniDocs v1.0.0</span>
+  <a href="https://github.com/sabnck/oportunidocs" target="_blank" class="footer-text" style="color:#6366f1;">GitHub</a>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+app-desktop/out/
+app-desktop/dist/
+app-desktop/build/
+core-api/dist/
+extension-web/dist/
+
+# Installers and binaries
+*.exe
+*.dmg
+*.deb
+*.rpm
+*.AppImage
+*.snap
+*.blockmap
+*.asar
+builder-debug.yml
+builder-effective-config.yaml
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+.codex_pdf_inspect.mjs
+app-desktop/electron.vite.config.*.mjs
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Vite cache
+.vite/

@@ -1,0 +1,20 @@
+{
+  "name": "oportunidocs-core-api",
+  "version": "1.0.0",
+  "description": "Standalone REST API for OportuniDocs. Use it without the desktop app.",
+  "main": "src/server.js",
+  "type": "module",
+  "author": "Henrique Fernandes",
+  "license": "SEE LICENSE IN LICENSE",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.3",
+    "cors": "^2.8.5",
+    "multer": "^2.0.0",
+    "pdf-lib": "^1.17.1",
+    "@pdf-lib/fontkit": "^1.1.1"
+  }
+}
