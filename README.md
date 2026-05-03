@@ -25,7 +25,7 @@ Select detected text areas, edit the content, adjust font size, style, color and
 
 **Work with scanned documents and images**
 
-OCR support detects text in scanned pages and image-based documents locally with Tesseract.js. This makes it possible to correct text over a scan while keeping the original page visible.
+OCR support detects text in scanned pages and image-based documents with Tesseract.js. OCR runs locally after the required language data is available; the first use may need to download Tesseract language files.
 
 **Annotate and sign**
 
@@ -45,15 +45,16 @@ When the desktop app is running, a REST API is available at `http://localhost:47
 
 **Browser extension**
 
-The Chrome and Edge extension can detect PDF links and send them to the local editor.
+The Chrome and Edge extension can send PDF links or the active PDF tab to the local editor through a context menu and popup.
 
 ## Privacy
 
 OportuniDocs is built around local processing.
 
 - Documents are not uploaded by the editor.
-- OCR runs locally in the browser or desktop app.
-- The local API is bound to `127.0.0.1`.
+- OCR runs locally in the browser or desktop app after language data is available.
+- The local API is bound to `127.0.0.1` and uses a browser-origin allowlist.
+- The browser extension only requests access to the local app endpoint.
 - No telemetry is collected by this project.
 - The user stays responsible for files they export, share or upload elsewhere.
 
@@ -63,10 +64,7 @@ OportuniDocs is built around local processing.
 oportunidocs/
 |- app-desktop/       Electron, React and TypeScript desktop app
 |- core-api/          Standalone REST API for document automation
-|- extension-web/     Chrome and Edge extension
-|- docs/              Architecture and API notes
-|- scripts/           Build and release helpers
-`- shared/            Shared types and constants
+`- extension-web/     Chrome and Edge extension
 ```
 
 ## Requirements
@@ -142,7 +140,7 @@ curl -X POST http://localhost:47411/api/pdf/merge \
 3. Choose "Load unpacked".
 4. Select the `extension-web/` folder.
 
-After installation, right-click a PDF link or use the extension popup to open documents in OportuniDocs.
+After installation, right-click a PDF link or use the extension popup to open documents in OportuniDocs. The extension does not inject a content script into every page.
 
 ## Development Notes
 

@@ -9,14 +9,17 @@ Use it in CI/CD pipelines, backend automations, assistant integrations or any en
 ```bash
 npm install
 npm start
-# http://localhost:4000
+# http://127.0.0.1:4000
 ```
 
-Change port:
+Change host, port or browser CORS allowlist:
 
 ```bash
 PORT=8080 npm start
+HOST=0.0.0.0 PORT=8080 OPORTUNIDOCS_ALLOWED_ORIGINS=http://localhost:3000 npm start
 ```
+
+The API listens on `127.0.0.1` by default. Requests without a browser `Origin` header, such as `curl` and backend automation, continue to work.
 
 ## Endpoints
 

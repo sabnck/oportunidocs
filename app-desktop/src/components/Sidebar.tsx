@@ -120,7 +120,11 @@ export function Sidebar() {
             {f.modified && <span className="text-[var(--accent)] ml-0.5">•</span>}
             <span
               className="ml-auto opacity-50 hover:opacity-100"
-              onClick={e => { e.stopPropagation(); removeFile(f.id) }}
+              onClick={e => {
+                e.stopPropagation()
+                if (f.modified && !window.confirm(`Close ${f.name} without saving changes?`)) return
+                removeFile(f.id)
+              }}
             >
               <X size={10} />
             </span>

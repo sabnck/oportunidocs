@@ -3,6 +3,8 @@ import { PDFDocument } from 'pdf-lib'
 import type { EditableBlockKind, BackgroundType, BackgroundComplexity } from '../utils/documentModel'
 import type { SourceKind } from '../utils/documentIO'
 
+const HISTORY_LIMIT = 75
+
 export type ToolType =
   | 'select'
   | 'text'
@@ -310,9 +312,10 @@ export const usePDFStore = create<PDFStore>((set, get) => ({
     const idx = state.historyIndex[fileId] ?? 0
     const hist = (state.history[fileId] ?? []).slice(0, idx + 1)
     hist.push({ annotations: [...file.annotations] })
-    const newIdx = hist.length - 1
+    const cappedHist = hist.slice(-HISTORY_LIMIT)
+    const newIdx = cappedHist.length - 1
     set(s => ({
-      history: { ...s.history, [fileId]: hist },
+      history: { ...s.history, [fileId]: cappedHist },
       historyIndex: { ...s.historyIndex, [fileId]: newIdx }
     }))
   },

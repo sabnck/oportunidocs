@@ -25,7 +25,7 @@ Selecione áreas de texto detectadas, edite o conteúdo, ajuste tamanho da fonte
 
 **Documentos digitalizados e imagens**
 
-O OCR detecta texto em páginas digitalizadas e documentos baseados em imagem usando Tesseract.js localmente. Isso permite corrigir texto sobre um scan mantendo a página original visível.
+O OCR detecta texto em páginas digitalizadas e documentos baseados em imagem com Tesseract.js. O OCR roda localmente depois que os dados de idioma necessários estão disponíveis; no primeiro uso, pode ser preciso baixar arquivos de idioma do Tesseract.
 
 **Anotações e assinaturas**
 
@@ -45,15 +45,16 @@ Com o app desktop aberto, uma API REST fica disponível em `http://localhost:474
 
 **Extensão para navegador**
 
-A extensão para Chrome e Edge detecta links de PDF e envia para o editor local.
+A extensão para Chrome e Edge envia links de PDF ou a aba PDF ativa para o editor local por menu de contexto e popup.
 
 ## Privacidade
 
 OportuniDocs foi criado com processamento local como base.
 
 - Os documentos não são enviados pelo editor.
-- O OCR roda localmente no navegador ou no app desktop.
-- A API local fica limitada a `127.0.0.1`.
+- O OCR roda localmente no navegador ou no app desktop depois que os dados de idioma estão disponíveis.
+- A API local fica limitada a `127.0.0.1` e usa uma lista de origens permitidas no navegador.
+- A extensão do navegador só pede acesso ao endpoint local do app.
 - Este projeto não coleta telemetria.
 - O usuário continua responsável pelos arquivos que exporta, compartilha ou envia para outros serviços.
 
@@ -63,10 +64,7 @@ OportuniDocs foi criado com processamento local como base.
 oportunidocs/
 |- app-desktop/       App desktop com Electron, React e TypeScript
 |- core-api/          API REST standalone para automação de documentos
-|- extension-web/     Extensão para Chrome e Edge
-|- docs/              Notas de arquitetura e API
-|- scripts/           Auxiliares de build e release
-`- shared/            Tipos e constantes compartilhados
+`- extension-web/     Extensão para Chrome e Edge
 ```
 
 ## Requisitos
@@ -142,7 +140,7 @@ curl -X POST http://localhost:47411/api/pdf/merge \
 3. Escolha "Carregar sem compactação".
 4. Selecione a pasta `extension-web/`.
 
-Depois de instalada, clique com o botão direito em um link de PDF ou use o popup da extensão para abrir documentos no OportuniDocs.
+Depois de instalada, clique com o botão direito em um link de PDF ou use o popup da extensão para abrir documentos no OportuniDocs. A extensão não injeta um content script em todas as páginas.
 
 ## Notas Para Desenvolvimento
 

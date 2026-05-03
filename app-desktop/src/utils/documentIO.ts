@@ -4,7 +4,7 @@ import * as PDFJS from 'pdfjs-dist'
 export type SourceKind = 'pdf' | 'image'
 export type ExportFormat = 'pdf' | 'png' | 'jpeg'
 
-export const SUPPORTED_OPEN_ACCEPT = 'image/*,.pdf,application/pdf,image/png,image/jpeg,image/jpg,image/webp,image/heic,image/heif'
+export const SUPPORTED_OPEN_ACCEPT = '.pdf,application/pdf,image/png,image/jpeg,image/jpg,image/webp'
 
 const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'webp'])
 const EXPORT_EXTENSIONS: Record<ExportFormat, string> = {
@@ -32,13 +32,13 @@ export function getBaseName(name = 'document') {
 }
 
 export function isSupportedInput(name: string, mimeType = '') {
-  if (mimeType === 'application/pdf' || mimeType.startsWith('image/')) return true
+  if (mimeType === 'application/pdf') return true
   const ext = getExtension(name)
   return ext === 'pdf' || IMAGE_EXTENSIONS.has(ext)
 }
 
 function detectSourceKind(name: string, mimeType = ''): SourceKind {
-  if (mimeType.startsWith('image/')) return 'image'
+  if (mimeType === 'image/png' || mimeType === 'image/jpeg' || mimeType === 'image/jpg' || mimeType === 'image/webp') return 'image'
   const ext = getExtension(name)
   return IMAGE_EXTENSIONS.has(ext) ? 'image' : 'pdf'
 }

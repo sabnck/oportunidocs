@@ -2,6 +2,8 @@
 
 Thanks for your interest in contributing to OportuniDocs.
 
+OportuniDocs is source-available, not open source. By opening a pull request, you agree that your contribution is provided under the proprietary terms described in [LICENSE](./LICENSE).
+
 ---
 
 ## How to contribute
@@ -60,4 +62,4 @@ Improve merge modal drag indicator
 
 ## License
 
-By contributing, you agree that your changes will remain under the same proprietary terms described in [LICENSE](./LICENSE).
+Contributions remain under the same proprietary terms described in [LICENSE](./LICENSE).

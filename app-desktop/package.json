@@ -11,7 +11,8 @@
     "preview": "electron-vite preview",
     "build:win": "npm run build && electron-builder --win",
     "build:portable": "npm run build && electron-builder --win portable",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+    "typecheck": "tsc --noEmit --project tsconfig.json",
+    "lint": "npm run typecheck"
   },
   "dependencies": {
     "pdfjs-dist": "^4.10.38",

@@ -1,11 +1,50 @@
 import { app, BrowserWindow, ipcMain, dialog, shell, Menu, protocol } from 'electron'
-import { join } from 'path'
-import { existsSync, readFileSync, writeFileSync, unlinkSync } from 'fs'
+import { basename, dirname, extname, join, resolve } from 'path'
+import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { startLocalServer, stopLocalServer } from './server'
 
 let mainWindow: BrowserWindow | null = null
 const isDev = process.env.NODE_ENV === 'development'
 const gotSingleInstanceLock = app.requestSingleInstanceLock()
+const allowedReadPaths = new Set<string>()
+const allowedWritePaths = new Set<string>()
+const allowedSavePrefixes = new Map<string, Set<string>>()
+
+function normalizeUserPath(filePath: string) {
+  return resolve(filePath)
+}
+
+function rememberOpenedPath(filePath: string) {
+  const normalized = normalizeUserPath(filePath)
+  allowedReadPaths.add(normalized)
+  allowedWritePaths.add(normalized)
+  return normalized
+}
+
+function rememberSavePath(filePath: string) {
+  const normalized = normalizeUserPath(filePath)
+  allowedReadPaths.add(normalized)
+  allowedWritePaths.add(normalized)
+
+  const dir = dirname(normalized)
+  const stem = basename(normalized, extname(normalized))
+  const stems = allowedSavePrefixes.get(dir) ?? new Set<string>()
+  stems.add(stem)
+  allowedSavePrefixes.set(dir, stems)
+  return normalized
+}
+
+function canWritePath(filePath: string) {
+  const normalized = normalizeUserPath(filePath)
+  if (allowedWritePaths.has(normalized)) return true
+
+  const dir = dirname(normalized)
+  const stem = basename(normalized, extname(normalized))
+  const allowedStems = allowedSavePrefixes.get(dir)
+  if (!allowedStems) return false
+
+  return Array.from(allowedStems).some(allowedStem => stem === allowedStem || stem.startsWith(`${allowedStem}-page-`))
+}
 
 if (!gotSingleInstanceLock) {
   app.quit()
@@ -198,7 +237,8 @@ ipcMain.handle('dialog:openFile', async () => {
   })
   if (result.canceled) return null
   const files = result.filePaths.map(filePath => {
-    const ext = filePath.split('.').pop()?.toLowerCase()
+    const normalizedPath = rememberOpenedPath(filePath)
+    const ext = normalizedPath.split('.').pop()?.toLowerCase()
     const mimeType = ext === 'png'
       ? 'image/png'
       : ext === 'jpg' || ext === 'jpeg'
@@ -208,9 +248,9 @@ ipcMain.handle('dialog:openFile', async () => {
           : 'application/pdf'
 
     return {
-      path: filePath,
-      data: readFileSync(filePath).toString('base64'),
-      name: filePath.split(/[\\/]/).pop() || 'document.pdf',
+      path: normalizedPath,
+      data: readFileSync(normalizedPath).toString('base64'),
+      name: basename(normalizedPath) || 'document.pdf',
       mimeType
     }
   })
@@ -227,12 +267,18 @@ ipcMain.handle('dialog:saveFile', async (_, { defaultName }: { defaultName: stri
       { name: 'JPEG image', extensions: ['jpg', 'jpeg'] }
     ]
   })
-  return result.canceled ? null : result.filePath
+  return result.canceled || !result.filePath ? null : rememberSavePath(result.filePath)
 })
 // IPC: Write file bytes
 ipcMain.handle('fs:writeFile', async (_, { path, data }: { path: string; data: number[] }) => {
   try {
-    writeFileSync(path, Buffer.from(data))
+    const normalizedPath = normalizeUserPath(path)
+    if (!canWritePath(normalizedPath)) {
+      return { success: false, error: 'Write path was not selected by the user.' }
+    }
+    writeFileSync(normalizedPath, Buffer.from(data))
+    allowedReadPaths.add(normalizedPath)
+    allowedWritePaths.add(normalizedPath)
     return { success: true }
   } catch (e: any) {
     return { success: false, error: e.message }
@@ -242,7 +288,11 @@ ipcMain.handle('fs:writeFile', async (_, { path, data }: { path: string; data: n
 // IPC: Read file
 ipcMain.handle('fs:readFile', async (_, filePath: string) => {
   try {
-    const data = readFileSync(filePath)
+    const normalizedPath = normalizeUserPath(filePath)
+    if (!allowedReadPaths.has(normalizedPath)) {
+      return { success: false, error: 'Read path was not selected by the user.' }
+    }
+    const data = readFileSync(normalizedPath)
     return { success: true, data: Array.from(data) }
   } catch (e: any) {
     return { success: false, error: e.message }
