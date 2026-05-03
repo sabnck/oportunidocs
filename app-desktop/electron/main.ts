@@ -46,6 +46,21 @@ function canWritePath(filePath: string) {
   return Array.from(allowedStems).some(allowedStem => stem === allowedStem || stem.startsWith(`${allowedStem}-page-`))
 }
 
+function isSafeExternalUrl(url: string) {
+  try {
+    const parsed = new URL(url)
+    return ['https:', 'http:', 'mailto:'].includes(parsed.protocol)
+  } catch {
+    return false
+  }
+}
+
+function isAllowedRendererNavigation(url: string) {
+  if (url.startsWith('file://')) return true
+  if (isDev && (url.startsWith('http://localhost:5173') || url.startsWith('http://127.0.0.1:5173'))) return true
+  return false
+}
+
 if (!gotSingleInstanceLock) {
   app.quit()
 }
@@ -86,7 +101,9 @@ function createWindow() {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
+      sandbox: true,
+      webSecurity: true,
+      allowRunningInsecureContent: false
     },
     icon: join(__dirname, '../../assets/icon.png'),
     show: false
@@ -117,8 +134,27 @@ function createWindow() {
     console.error('[OportuniDocs] Main window became unresponsive')
   })
 
+  mainWindow.webContents.session.setPermissionRequestHandler((_, __, callback) => {
+    callback(false)
+  })
+
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (isAllowedRendererNavigation(url)) return
+
+    event.preventDefault()
+    if (isSafeExternalUrl(url)) {
+      shell.openExternal(url).catch(error => {
+        console.error('[OportuniDocs] Failed to open external URL:', error)
+      })
+    }
+  })
+
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url)
+    if (isSafeExternalUrl(url)) {
+      shell.openExternal(url).catch(error => {
+        console.error('[OportuniDocs] Failed to open external URL:', error)
+      })
+    }
     return { action: 'deny' }
   })
 

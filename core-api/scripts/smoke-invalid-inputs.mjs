@@ -52,6 +52,14 @@ function formWithFile(fileBlob, fields = {}) {
   return form
 }
 
+function mergeForm(fileBlobs) {
+  const form = new FormData()
+  fileBlobs.forEach((fileBlob, index) => {
+    form.append('files', fileBlob, `document-${index + 1}.pdf`)
+  })
+  return form
+}
+
 try {
   await waitForServer()
 
@@ -61,17 +69,37 @@ try {
   await expectStatus('status endpoint', () => fetch(`${BASE_URL}/api/status`), 200)
   await expectStatus('info without file', () => fetch(`${BASE_URL}/api/pdf/info`, { method: 'POST' }), 400)
   await expectStatus('merge without files', () => fetch(`${BASE_URL}/api/pdf/merge`, { method: 'POST' }), 400)
+  await expectStatus('merge with one file', () => fetch(`${BASE_URL}/api/pdf/merge`, {
+    method: 'POST',
+    body: mergeForm([validPdf])
+  }), 400)
   await expectStatus('info non-pdf bytes', () => fetch(`${BASE_URL}/api/pdf/info`, {
     method: 'POST',
     body: formWithFile(fakePdf)
+  }), 400)
+  await expectStatus('extract without pages', () => fetch(`${BASE_URL}/api/pdf/extract-pages`, {
+    method: 'POST',
+    body: formWithFile(validPdf)
   }), 400)
   await expectStatus('extract malformed pages', () => fetch(`${BASE_URL}/api/pdf/extract-pages`, {
     method: 'POST',
     body: formWithFile(validPdf, { pages: 'not-json' })
   }), 400)
+  await expectStatus('split from greater than to', () => fetch(`${BASE_URL}/api/pdf/split`, {
+    method: 'POST',
+    body: formWithFile(validPdf, { from: 2, to: 1 })
+  }), 400)
   await expectStatus('split out of range', () => fetch(`${BASE_URL}/api/pdf/split`, {
     method: 'POST',
     body: formWithFile(validPdf, { from: 1, to: 99 })
+  }), 400)
+  await expectStatus('delete every page', () => fetch(`${BASE_URL}/api/pdf/delete-pages`, {
+    method: 'POST',
+    body: formWithFile(validPdf, { pages: '[1]' })
+  }), 400)
+  await expectStatus('watermark invalid opacity', () => fetch(`${BASE_URL}/api/pdf/watermark`, {
+    method: 'POST',
+    body: formWithFile(validPdf, { opacity: 2 })
   }), 400)
 } finally {
   server.kill()
